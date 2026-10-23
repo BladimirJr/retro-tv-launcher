@@ -30,12 +30,12 @@ También:
 Los temas están en `themes/puente`, `themes/arcade`, `themes/nieve` y `themes/kawaii`. Todo se probó en un teléfono
 Honor (Android 15); **todavía no se ha instalado en una TV**.
 
-## Imágenes de Hello Kitty (no están en el repo)
+## Imágenes de Hello Kitty (en `themes/kawaii/`)
 
-El tema kawaii muestra, si están en `themes/kawaii/`, `character.png`, `fairy.png`, `peek.png`, `sticker.png`,
-`logo.png` y `bow.png`. Son imágenes de Sanrio que el usuario descargó para uso personal: `themes/kawaii/.gitignore`
-impide subirlas y **nunca deben publicarse ni subirse**. Si el usuario las quiere en esta PC, que las copie a mano
-desde la otra. Sin ellas, el tema funciona igual, solo sin personajes. Para quitarles el fondo a imágenes nuevas se
+El tema kawaii muestra `character.png`, `fairy.png`, `peek.png`, `sticker.png`, `logo.png` y `bow.png` de
+`themes/kawaii/`. Son imágenes de Sanrio que el usuario descargó para uso personal, y van en el repo porque es
+**privado**. Si algún día se hace público, primero hay que sacarlas (ver `themes/kawaii/.gitignore`). Nunca
+publicarlas en otro lado. Sin ellas, el tema funciona igual, solo sin personajes. Para quitarles el fondo a imágenes nuevas se
 usó un programa Java sencillo (relleno desde los bordes para personajes; quitar todo lo claro para logos).
 
 ## Compilar
@@ -86,8 +86,8 @@ Para el launcher:
 
 11. ¿Cuántos espacios quieres en el dock (4, 5, 6 o 7), con qué apps y en qué orden?
 12. ¿Qué tema quieres de inicio: puente, arcade, nieve o kawaii? (Luego se cambia en la casita.)
-13. Si elige kawaii: ¿copiaste las imágenes de Kitty a `themes/kawaii/`? Si no, el tema va sin personajes. Las
-    imágenes se suben a la TV con `adb push`, porque `tools/theme.sh` solo sube `config.json` y fondos.
+13. Si elige kawaii: las imágenes de Kitty ya están en `themes/kawaii/`, pero se suben a la TV con `adb push`
+    a la carpeta del tema, porque `tools/theme.sh` solo sube `config.json` y fondos.
 14. Tras quitar el launcher original de Google TV: que pruebe cada botón del control (Netflix, YouTube, Entradas,
     Ajustes) y decir cuáles hay que reasignar, avisando lo que cuesta (en algunas TCL se pierde la repetición
     del volumen).

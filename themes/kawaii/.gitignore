@@ -1,4 +1,3 @@
-# The kawaii scene shows the owner's own pictures when they are in this folder (character.png, fairy.png, peek.png,
-# sticker.png, logo.png, bow.png; see KawaiiView). They are third-party character art for personal use on one TV,
-# so they stay on the computer and are never committed.
-*.png
+# The Hello Kitty pictures in this folder are Sanrio art, kept here for personal use on one TV because this
+# repository is private. If the repository is ever made public, remove them first and restore this rule:
+# *.png
