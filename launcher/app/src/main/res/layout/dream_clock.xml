@@ -5,6 +5,13 @@
     android:layout_height="match_parent"
     android:background="#FF000000">
 
+    <!-- The galaxy screensaver's pictures (a theme's "screensaver": "galaxy"); gone otherwise. -->
+    <com.gathin.tvhome.GalaxyView
+        android:id="@+id/dreamGalaxy"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
+
     <View
         android:id="@+id/dreamAmbient"
         android:layout_width="match_parent"

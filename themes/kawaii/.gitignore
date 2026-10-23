@@ -1,0 +1,4 @@
+# The kawaii scene shows the owner's own pictures when they are in this folder (character.png, fairy.png, peek.png,
+# sticker.png, logo.png, bow.png; see KawaiiView). They are third-party character art for personal use on one TV,
+# so they stay on the computer and are never committed.
+*.png

@@ -116,7 +116,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private long settingsRevision;
     /** Idle time on Home before ClockActivity; 0 is off (config.xml, home_idle_clock_minutes). */
     private long idleClockMs;
-    private final Runnable showIdleClock = () -> startActivity(new Intent(this, ClockActivity.class));
+    private final Runnable showIdleClock = () -> startActivity(new Intent(this, ClockActivity.class)
+            .putExtra(ClockActivity.EXTRA_SCREENSAVER, this.screensaver));
     private String liveTvAction;
     private String liveTvInputId;
     /** The app library is on (config.xml, app_library): only then can the tile menu take an app off Home. */
@@ -190,6 +191,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private String greetingName = "";
     /** Optional time-of-day backdrop (config.xml, sky_intensity); 0 keeps it hidden. */
     private SkyView sky;
+    /** The animated backdrop (theme "scene": "bridge" or "arcade"), or null without one. */
+    private AnimatedScene scene;
+    /** Theme "screensaver": what the idle clock draws behind itself. */
+    private String screensaver = "";
     private String vpnApp;
     private SpringAnimation springX, springY;
     private float glassTargetX, glassTargetY;
@@ -394,8 +399,39 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         wallpaperPlayer = new WallpaperPlayer(this, root, cfg);
         sky = findViewById(R.id.sky);
         sky.setIntensity(cfg.skyIntensity);
+        screensaver = cfg.screensaver;
+        int sceneId = "bridge".equals(cfg.scene) ? R.id.bridge : "arcade".equals(cfg.scene) ? R.id.arcade
+                : "snow".equals(cfg.scene) ? R.id.snow : "kawaii".equals(cfg.scene) ? R.id.kawaii : 0;
+        if ("snow".equals(cfg.scene)) wearHat();
+        if (cfg.touchControls) TouchPad.attach(this, root);
+        BootSplash.maybeShow(this, root, cfg.scene);
+        if (sceneId != 0) {
+            View sceneView = findViewById(sceneId);
+            sceneView.setVisibility(View.VISIBLE);
+            scene = (AnimatedScene) sceneView;
+        }
         glass = findViewById(R.id.glass);
         if (festive) glass.setAccent(festival.accentColor());
+        if ("arcade".equals(cfg.scene)) glass.setNeon(0xFF2E9A);
+        else if ("kawaii".equals(cfg.scene)) {
+            glass.setNeon(0xFF5FA2);
+            // White text vanishes on the pastel sky: the greeting, clock and date go berry pink instead.
+            int[] ids = {R.id.greeting, R.id.clock, R.id.ampm, R.id.date, R.id.shamsiDate};
+            int[] colors = {0xCCB0306A, 0xFFB0306A, 0xCCB0306A, 0xCCB0306A, 0xCCB0306A};
+            float glowPx = 4f * getResources().getDisplayMetrics().density;
+            for (int i = 0; i < ids.length; i++) {
+                TextView text = findViewById(ids[i]);
+                text.setTextColor(colors[i]);
+                text.setShadowLayer(glowPx, 0f, 0f, 0xFFFFFFFF);   // a white halo, as on the pastel cards
+            }
+            // The top bar's white icons vanish on the pastel sky too.
+            android.content.res.ColorStateList berry = android.content.res.ColorStateList.valueOf(0xFFB0306A);
+            for (int id : new int[]{R.id.btnInputs, R.id.btnWifi, R.id.btnHomeSettings, R.id.btnSettings}) {
+                TextView button = findViewById(id);
+                button.setCompoundDrawableTintList(berry);
+                button.setTextColor(0xFFB0306A);
+            }
+        }
         ambient = findViewById(R.id.ambient);
         // The glow is one bitmap, so its alpha can be applied while drawing it. Otherwise every frame of
         // a fade renders it into a full-screen offscreen buffer first.
@@ -607,6 +643,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                     new Intent(this, LauncherSettingsActivity.class), LAUNCHER_SETTINGS_REQUEST);
             else open(systemIntent(Settings.ACTION_SETTINGS));
         });
+        View btnHomeSettings = findViewById(R.id.btnHomeSettings);
+        btnHomeSettings.setVisibility(cfg.homeSettingsButton ? View.VISIBLE : View.GONE);
+        btnHomeSettings.setOnClickListener(v -> startActivityForResult(
+                new Intent(this, LauncherSettingsActivity.class), LAUNCHER_SETTINGS_REQUEST));
         btnReorder = findViewById(R.id.btnReorder);
         btnReorder.setOnClickListener(v -> toggleReorder());
         btnReorder.setVisibility(cfg.reorderButton ? View.VISIBLE : View.GONE);
@@ -677,8 +717,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         btnSettings.setOnKeyListener(pillKeys);
         btnReorder.setOnKeyListener(pillKeys);
         btnLibraryTop.setOnKeyListener(pillKeys);
+        btnHomeSettings.setOnKeyListener(pillKeys);
         if (advancedEffects) {
-            for (View button : new View[]{btnInputs, btnWifi, btnReorder, btnLibraryTop, btnSettings}) {
+            for (View button : new View[]{btnInputs, btnWifi, btnReorder, btnLibraryTop, btnHomeSettings, btnSettings}) {
                 button.setOnFocusChangeListener((view, focused) -> view.animate()
                         .scaleX(focused ? 1.04f : 1f).scaleY(focused ? 1.04f : 1f)
                         .setDuration(reducedMotion ? Motion.REDUCED_MS : 160).start());
@@ -856,6 +897,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         if (showStats) startStats();
         sky.update();
         wallpaperPlayer.start();
+        if (scene != null && !reducedMotion) scene.start();
         handler.postDelayed(minuteTick, MINUTE_MS);
         if (festive && diya != null) {
             diya.start();
@@ -865,6 +907,25 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                 handler.postDelayed(this::playPetalShower, 450);
             }
         }
+    }
+
+    /** The snow scene's Santa hat, tilted on the clock's first digit and kept there whenever the clock moves. */
+    private void wearHat() {
+        View clock = findViewById(R.id.clock);
+        ImageView hat = new ImageView(this);
+        hat.setImageResource(R.drawable.santa_hat);
+        hat.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        hat.setRotation(-14f);
+        float density = getResources().getDisplayMetrics().density;
+        int w = (int) (46 * density), h = (int) (38 * density);
+        root.addView(hat, new FrameLayout.LayoutParams(w, h));
+        int[] at = new int[2], rootAt = new int[2];
+        clock.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) -> v.post(() -> {
+            v.getLocationInWindow(at);
+            root.getLocationInWindow(rootAt);
+            hat.setX(at[0] - rootAt[0] - w * 0.30f);
+            hat.setY(at[1] - rootAt[1] - h * 0.62f);
+        }));
     }
 
     /** Launcher settings' change count (Config.SETTINGS_REVISION_KEY); onResume rebuilds Home when it moved. */
@@ -1025,6 +1086,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         root.removeCallbacks(showIdleClock);
         endReorder();   // Home or another app while reordering keeps the order so far
         wallpaperPlayer.stop();
+        if (scene != null) scene.stop();
         stopAmbientAnimation();
         hero.animate().cancel();
         ambient.animate().cancel();
@@ -1128,6 +1190,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
      */
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
+        if (BootSplash.consumeKey(root, event)) return true;
         if (handleSettingsKey(event)) return true;
         if (tileMenuEnabled && !reordering && openPopup == null && cardPrompt == null
                 && event.getKeyCode() == KeyEvent.KEYCODE_MENU) {

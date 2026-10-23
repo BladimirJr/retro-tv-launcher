@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- launch_transition "deploy": Home rushes towards the camera and fades, as if stepping into the game. -->
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+    android:interpolator="@android:interpolator/accelerate_cubic"
+    android:duration="240">
+    <alpha android:fromAlpha="1.0" android:toAlpha="0.0" />
+    <scale android:fromXScale="1.0" android:toXScale="1.12"
+        android:fromYScale="1.0" android:toYScale="1.12"
+        android:pivotX="50%" android:pivotY="50%" />
+</set>

@@ -24,6 +24,7 @@ public final class LauncherSettingsActivity extends Activity {
     private static final int[] DOCK_OPACITIES = {100, 70, 50, 30};
     private final TextView[] dockChoices = new TextView[DOCK_OPACITIES.length];
     private TextView wallpaperChoice;
+    private TextView sceneChoice;
     private TextView animationsChoice;
     private TextView advancedChoice;
     private TextView followThemeChoice;
@@ -94,6 +95,14 @@ public final class LauncherSettingsActivity extends Activity {
             reverseRow(rowChoices);
             reverseRow(dockChoices);
         }
+        sceneChoice = findViewById(R.id.sceneChoice);
+        sceneChoice.setOnClickListener(v -> showScenePicker());
+        findViewById(R.id.splashPreview).setOnClickListener(v -> {
+            // Forget this boot's splash and rebuild Home, which then shows it as after a power-on.
+            BootSplash.forgetShown(this);
+            changed();
+            finish();
+        });
         wallpaperChoice = findViewById(R.id.wallpaperChoice);
         wallpaperChoice.setOnClickListener(v -> showWallpaperPicker());
         animationsChoice = findViewById(R.id.animationsChoice);
@@ -123,7 +132,7 @@ public final class LauncherSettingsActivity extends Activity {
             if (!hasOnTvChoices()) return;
             choices.edit().remove("columns").remove(Config.ROWS_BELOW_DOCK_KEY).remove("animations")
                     .remove("advanced_effects").remove(Config.WALLPAPER_CHOICE_KEY)
-                    .remove(Config.DOCK_OPACITY_KEY).commit();
+                    .remove(Config.DOCK_OPACITY_KEY).remove(Config.SCENE_CHOICE_KEY).commit();
             Config current = Config.load(this);
             columns = current.columns;
             rowsBelowDock = current.rowsBelowDock;
@@ -186,6 +195,41 @@ public final class LauncherSettingsActivity extends Activity {
                 .show();
     }
 
+    /** Animated background: one of Config.SCENES, none, or back to the theme's. */
+    private void showScenePicker() {
+        String[] labels = new String[Config.SCENES.length + 1];
+        for (int i = 0; i < Config.SCENES.length; i++) labels[i] = sceneName(Config.SCENES[i]);
+        labels[Config.SCENES.length] = getString(R.string.wallpaper_none);
+        String current = Config.load(this).scene;
+        int checked = current.isEmpty() ? Config.SCENES.length : java.util.Arrays.asList(Config.SCENES).indexOf(current);
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.scene_label)
+                .setSingleChoiceItems(labels, checked, (dialog, which) -> {
+                    dialog.dismiss();
+                    choices.edit().putString(Config.SCENE_CHOICE_KEY,
+                            which == Config.SCENES.length ? "none" : Config.SCENES[which]).apply();
+                    changed();
+                    refresh();
+                })
+                .setNeutralButton(R.string.wallpaper_theme_default, (dialog, which) -> {
+                    choices.edit().remove(Config.SCENE_CHOICE_KEY).apply();
+                    changed();
+                    refresh();
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
+    }
+
+    private String sceneName(String scene) {
+        switch (scene) {
+            case "bridge": return getString(R.string.scene_bridge);
+            case "arcade": return getString(R.string.scene_arcade);
+            case "snow": return getString(R.string.scene_snow);
+            case "kawaii": return getString(R.string.scene_kawaii);
+            default: return getString(R.string.wallpaper_none);
+        }
+    }
+
     private static int indexOf(List<File> images, String name) {
         if (name == null) return -1;
         for (int i = 0; i < images.size(); i++) {
@@ -232,13 +276,17 @@ public final class LauncherSettingsActivity extends Activity {
                 "none".equals(wallpaperCurrent) ? getString(R.string.wallpaper_none)
                         : wallpaperCurrent != null ? wallpaperCurrent
                         : getString(R.string.wallpaper_theme_default)));
+        String scene = choices.getString(Config.SCENE_CHOICE_KEY, null);
+        sceneChoice.setText(getString(R.string.scene_state, scene == null
+                ? getString(R.string.wallpaper_theme_default) : sceneName(scene)));
         followThemeChoice.setSelected(!hasOnTvChoices());
     }
 
     private boolean hasOnTvChoices() {
         return choices.contains("columns") || choices.contains(Config.ROWS_BELOW_DOCK_KEY)
                 || choices.contains("animations") || choices.contains("advanced_effects")
-                || choices.contains(Config.WALLPAPER_CHOICE_KEY) || choices.contains(Config.DOCK_OPACITY_KEY);
+                || choices.contains(Config.WALLPAPER_CHOICE_KEY) || choices.contains(Config.DOCK_OPACITY_KEY)
+                || choices.contains(Config.SCENE_CHOICE_KEY);
     }
 
     private void open(Intent intent) {

@@ -26,7 +26,7 @@
     <string name="dream_name">Reloj</string>
     <string name="launcher_settings">Ajustes del lanzador</string>
     <string name="columns_label">Aplicaciones por fila</string>
-    <string name="dock_opacity_label">Opacidad de la barra del dock</string>
+    <string name="dock_opacity_label">Opacidad del dock y los íconos</string>
     <string name="animations_state">Animaciones: %1$s</string>
     <string name="advanced_effects">Efectos avanzados</string>
     <string name="advanced_effects_state">Efectos avanzados: %1$s</string>
@@ -106,4 +106,16 @@
     <string name="race_live">%1$s · en directo</string>
     <string name="race_finished">Bandera a cuadros</string>
     <string name="last_opened">Abierta por última vez %1$s</string>
+    <!-- Arcade theme: after the focused app's name under its tile, "YOUTUBE - OPEN". -->
+    <string name="arcade_open">Abrir</string>
+    <!-- Launcher settings: the animated background drawn behind Home (Config.SCENES), or none. -->
+    <string name="scene_label">Fondo animado</string>
+    <string name="scene_state">Fondo animado: %1$s</string>
+    <string name="scene_bridge">Puente</string>
+    <string name="scene_arcade">Arcade</string>
+    <string name="scene_kawaii">Kawaii</string>
+    <string name="scene_snow">Nieve</string>
+    <!-- The retro loading screen after the TV starts (BootSplash); dots are added after it. -->
+    <string name="splash_preview">Ver pantalla de carga</string>
+    <string name="splash_loading">Cargando</string>
 </resources>

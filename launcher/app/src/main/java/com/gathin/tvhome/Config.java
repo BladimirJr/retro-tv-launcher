@@ -42,6 +42,10 @@ final class Config {
     static final String SETTINGS_NAME = "launcher_settings";
     static final String ROWS_BELOW_DOCK_KEY = "rows_below_dock";
     static final String WALLPAPER_CHOICE_KEY = "wallpaper_choice";
+    /** Launcher settings' animated background pick: a scene name, "none", or unset for the theme's. */
+    static final String SCENE_CHOICE_KEY = "scene_choice";
+    /** The animated backgrounds Launcher settings offers, as theme "scene" values. */
+    static final String[] SCENES = {"bridge", "arcade", "snow", "kawaii"};
     static final String DOCK_OPACITY_KEY = "dock_opacity";
     /**
      * Counts the changes made in Launcher settings. Home remembers the count it was built with and rebuilds on
@@ -198,6 +202,16 @@ final class Config {
     final Map<String, Set<String>> wallpaperMoods;
     /** Shape of the glow behind the focused app (config.xml, glow_style): {@link #GLOW_RADIAL} or {@link #GLOW_HORIZON}. */
     final String glowStyle;
+    /** Animated Home backdrop drawn in code (theme only, "scene"): {@code "bridge"} or empty for none. */
+    String scene = "";
+    /** Look of the clock screensaver (theme only, "screensaver"): {@code "galaxy"} or empty for the ambient glow. */
+    String screensaver = "";
+    /** How an app opens from Home (theme only, "launch_transition"): {@code "deploy"} or empty for the usual one. */
+    String launchTransition = "";
+    /** On-screen D-pad and OK for trying Home on a phone (theme only, "touch_controls"). */
+    boolean touchControls;
+    /** A round Launcher settings button beside the TV settings gear (theme only, "home_settings_button"). */
+    boolean homeSettingsButton;
 
     static final String GLOW_RADIAL = "radial", GLOW_HORIZON = "horizon";
     /** Show each rotating wallpaper's name from wallpapers/captions.txt (config.xml / theme wallpaper_captions). */
@@ -512,7 +526,7 @@ final class Config {
         Festival festival = json == null ? Festival.NONE : Festival.parse(string(json, "festival", ""),
                 string(json, "festival_until", ""), string(json, "greeting", ""), string(json, "accent_color", ""));
 
-        return new Config(dock, fillDock, hidden, libraryApps, liveTv, liveTvAction, liveTvInputId, packageMap(launchActions), packageMap(appLabels),
+        Config config = new Config(dock, fillDock, hidden, libraryApps, liveTv, liveTvAction, liveTvInputId, packageMap(launchActions), packageMap(appLabels),
                 packageMap(appBanners), panelService,
                 panelAction, panelExtra, coocaaSources, inputAction, inputUriScheme,
                 Math.max(1, columns), Math.max(0, rowsBelow), animations, advancedEffects,
@@ -521,6 +535,16 @@ final class Config {
                 wallpapers, rotationMinutes, wallpaperDim, dockOpacity, wallpaperOrder, applied,
                 festival, inputKeycodes, appKeys, stockHomeRedirect, json == null ? Collections.emptyList() : raceCalendar(json), cinematic, ambientGlow, appGlow, fadeRows,
                 Math.max(0, idleClockMinutes), keyFilter, dockGlass, glowStyle, wallpaperCaptions, handleViewInputs, tileMenu, dockEvenPadding, cinematicDots, cinematicWhiteFocus, wifiStatusColor, cinematicScrim, cinematicArt, wallpaperMoods, gamepadPassthrough);
+        if (json != null) {
+            config.scene = string(json, "scene", "").trim();
+            config.screensaver = string(json, "screensaver", "").trim();
+            config.launchTransition = string(json, "launch_transition", "").trim();
+            config.touchControls = bool(json, "touch_controls", false);
+            config.homeSettingsButton = bool(json, "home_settings_button", false);
+        }
+        String sceneChoice = choices.getString(SCENE_CHOICE_KEY, null);
+        if (sceneChoice != null) config.scene = "none".equals(sceneChoice) ? "" : sceneChoice;
+        return config;
     }
 
     /**
@@ -564,12 +588,12 @@ final class Config {
             SharedPreferences.Editor editor = choices.edit();
             if (!"absent".equals(token)) editor.remove("columns").remove("animations")
                     .remove("advanced_effects").remove(ROWS_BELOW_DOCK_KEY).remove(WALLPAPER_CHOICE_KEY)
-                    .remove(DOCK_OPACITY_KEY);
+                    .remove(DOCK_OPACITY_KEY).remove(SCENE_CHOICE_KEY);
             editor.putString(THEME_SIGNATURE_KEY, signature).commit();
         } else if (!seen.equals(signature)) {
             choices.edit().remove("columns").remove("animations").remove("advanced_effects")
                     .remove(ROWS_BELOW_DOCK_KEY).remove(WALLPAPER_CHOICE_KEY).remove(DOCK_OPACITY_KEY)
-                    .putString(THEME_SIGNATURE_KEY, signature).commit();
+                    .remove(SCENE_CHOICE_KEY).putString(THEME_SIGNATURE_KEY, signature).commit();
         }
     }
 

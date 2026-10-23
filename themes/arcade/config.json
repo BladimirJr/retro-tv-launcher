@@ -1,0 +1,19 @@
+{
+  "scene": "arcade",
+  "screensaver": "galaxy",
+  "launch_transition": "deploy",
+  "home_idle_clock_minutes": 5,
+  "background_color": "#050008",
+  "wallpaper": false,
+  "ambient_glow": false,
+  "app_glow": false,
+  "dock_title": false,
+  "dock_glass": false,
+  "dock_opacity": 30,
+  "icon_only_buttons": true,
+  "home_settings_button": true,
+  "focus_overshoot": false,
+  "animations": true,
+  "advanced_effects": true,
+  "fade_rows": true
+}

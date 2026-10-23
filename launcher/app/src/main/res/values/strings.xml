@@ -48,7 +48,7 @@
     <string name="launcher_settings">Launcher settings</string>
     <string name="columns_label">Apps per row</string>
     <string name="rows_below_dock_label">Rows below dock</string>
-    <string name="dock_opacity_label">Dock band opacity</string>
+    <string name="dock_opacity_label">Dock and tile opacity</string>
     <string name="wallpaper_label">Wallpaper</string>
     <string name="wallpaper_state">Wallpaper: %1$s</string>
     <string name="wallpaper_none">None</string>
@@ -145,4 +145,16 @@
     <!-- Cinematic top shelf (cinematic_home): the line under the focused dock app's name; %1$s is when it was
          last opened, e.g. "5 minutes ago" or "yesterday, 9:40 pm". -->
     <string name="last_opened">Last opened %1$s</string>
+    <!-- Arcade theme: after the focused app's name under its tile, "YOUTUBE - OPEN". -->
+    <string name="arcade_open">Open</string>
+    <!-- Launcher settings: the animated background drawn behind Home (Config.SCENES), or none. -->
+    <string name="scene_label">Animated background</string>
+    <string name="scene_state">Animated background: %1$s</string>
+    <string name="scene_bridge">Bridge</string>
+    <string name="scene_arcade">Arcade</string>
+    <string name="scene_kawaii">Kawaii</string>
+    <string name="scene_snow">Snow</string>
+    <!-- The retro loading screen after the TV starts (BootSplash); dots are added after it. -->
+    <string name="splash_preview">Preview the loading screen</string>
+    <string name="splash_loading">Loading</string>
 </resources>

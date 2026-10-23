@@ -13,6 +13,9 @@ import android.view.View;
  */
 public class ClockActivity extends Activity {
 
+    /** The theme's "screensaver" key, from Home. */
+    static final String EXTRA_SCREENSAVER = "screensaver";
+
     private ClockScene scene;
 
     @Override
@@ -21,7 +24,7 @@ public class ClockActivity extends Activity {
         setContentView(R.layout.dream_clock);
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN
                 | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_IMMERSIVE);
-        scene = new ClockScene(getWindow().getDecorView());
+        scene = new ClockScene(getWindow().getDecorView(), getIntent().getStringExtra(EXTRA_SCREENSAVER));
     }
 
     @Override

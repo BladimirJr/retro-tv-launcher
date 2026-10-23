@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Santa hat over the clock while the snow scene is on: red cap drooping to the right, white fur band, pompom. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="40dp"
+    android:viewportWidth="48"
+    android:viewportHeight="40">
+    <path
+        android:fillColor="#FFD32F2F"
+        android:pathData="M5,30 Q9,9 28,6 Q39,5 43,19 Q37,13 32,15 Q37,23 39,30 Z" />
+    <path
+        android:fillColor="#FF9A1B1B"
+        android:pathData="M28,6 Q39,5 43,19 Q37,13 32,15 Q34,10 28,6 Z" />
+    <path
+        android:fillColor="#FFF4F6FA"
+        android:pathData="M6,27 L40,27 Q43,27 43,30.5 L43,33 Q43,36.5 40,36.5 L6,36.5 Q3,36.5 3,33 L3,30.5 Q3,27 6,27 Z" />
+    <path
+        android:fillColor="#FFF4F6FA"
+        android:pathData="M43,15.5 A4.5,4.5 0 1,1 42.99,15.5 Z" />
+    <path
+        android:fillColor="#FFCBD5E3"
+        android:pathData="M6,33.5 L40,33.5 Q42,33.5 42.6,34.8 Q41.8,36.5 40,36.5 L6,36.5 Q4,36.5 3.4,34.8 Q4,33.5 6,33.5 Z" />
+</vector>

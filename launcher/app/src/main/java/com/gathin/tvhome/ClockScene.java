@@ -26,6 +26,9 @@ final class ClockScene {
     private final Random random = new Random();
     private final View content;
     private final GradientDrawable glow;
+    /** The galaxy pictures behind the clock, or null for the ambient glow. */
+    private final GalaxyView galaxy;
+    private int ticks;
     private int colorIndex;
     private int glowColor;
 
@@ -33,15 +36,23 @@ final class ClockScene {
         @Override
         public void run() {
             moveClock();
-            shiftGlow();
+            if (galaxy == null) shiftGlow();
+            else if (++ticks % 3 == 0) galaxy.next();   // a new picture every three minutes
             handler.postDelayed(this, MOVE_MS);
         }
     };
 
-    /** root is the inflated dream_clock layout. */
-    ClockScene(View root) {
+    /** root is the inflated dream_clock layout; screensaver is the theme's "screensaver" key. */
+    ClockScene(View root, String screensaver) {
         content = root.findViewById(R.id.dreamContent);
         View ambient = root.findViewById(R.id.dreamAmbient);
+        if ("galaxy".equals(screensaver)) {
+            galaxy = root.findViewById(R.id.dreamGalaxy);
+            galaxy.setVisibility(View.VISIBLE);
+            ambient.setVisibility(View.GONE);
+        } else {
+            galaxy = null;
+        }
         glow = new GradientDrawable();
         glow.setGradientType(GradientDrawable.RADIAL_GRADIENT);
         ambient.setBackground(glow);
@@ -59,11 +70,13 @@ final class ClockScene {
         });
         handler.removeCallbacks(tick);
         handler.postDelayed(tick, MOVE_MS);
+        if (galaxy != null) galaxy.start();
     }
 
     void stop() {
         handler.removeCallbacksAndMessages(null);   // the tick and any glow steps still queued
         content.animate().cancel();
+        if (galaxy != null) galaxy.stop();
     }
 
     private void moveClock() {

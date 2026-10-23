@@ -94,6 +94,17 @@
             android:layout_marginTop="28dp" />
 
         <TextView
+            android:id="@+id/sceneChoice"
+            style="@style/SettingsRow"
+            android:layout_marginTop="10dp" />
+
+        <TextView
+            android:id="@+id/splashPreview"
+            style="@style/SettingsRow"
+            android:layout_marginTop="10dp"
+            android:text="@string/splash_preview" />
+
+        <TextView
             android:id="@+id/animationsChoice"
             style="@style/SettingsRow"
             android:layout_marginTop="28dp" />

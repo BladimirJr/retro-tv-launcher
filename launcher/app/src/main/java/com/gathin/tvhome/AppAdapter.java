@@ -30,6 +30,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
@@ -206,6 +207,23 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private final Map<String, String> launchActions;
     /** Hold OK opens the activity's tile menu (config.xml, tile_menu); false opens App info, as before. */
     private final boolean tileMenu;
+    /** Theme "launch_transition": "deploy" opens apps through DeployFlash. */
+    private final boolean deploy;
+    /** Theme "scene": "arcade": neon cabinet tiles, pixelated art and pixel-font names (ArcadeTiles). */
+    private final boolean arcade;
+    /** Theme "scene": "kawaii": cream cards with pastel frames, a bow and the name in round letters (KawaiiTiles). */
+    private final boolean kawaii;
+    @Nullable private final android.graphics.Typeface kawaiiFont;
+    /** Square corners on every tile, the dock band and the focus glass; set by the arcade scene. */
+    static boolean squareTiles;
+    /** TouchPad on screen: tiles keep focus when the screen is touched, so the pad's keys move it like a remote. */
+    private final boolean touchControls;
+    /** dock_opacity as 0-255, applied to the tiles too so the scene shows through them; 255 keeps them solid. */
+    private final int tileAlpha;
+    /** Pixel-font tile faces by package and tile width, so a rebind never redraws them. */
+    private final Map<String, Drawable> pixelArt = new HashMap<>();
+    /** DeployFlash's colour: pink for the arcade scene, cyan otherwise. */
+    private final int deployAccent;
     /** Tile names and bundled banners that replace the app's own (config.xml, app_labels and app_banners). */
     private final Map<String, String> appLabels, appBanners;
     private final List<Entry> items = new ArrayList<>();
@@ -231,6 +249,16 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         this.cinematic = cfg.cinematicHome;
         this.launchActions = cfg.launchActions;
         this.tileMenu = cfg.tileMenu;
+        this.deploy = "deploy".equals(cfg.launchTransition) && cfg.animations && !cfg.reducedMotion;
+        this.deployAccent = "arcade".equals(cfg.scene) ? 0xFF2E9A : "kawaii".equals(cfg.scene) ? 0xFF7EB6 : 0x6FE6FF;
+        this.kawaii = "kawaii".equals(cfg.scene);
+        this.kawaiiFont = kawaii ? androidx.core.content.res.ResourcesCompat.getFont(ctx, R.font.outfit_medium) : null;
+        if (kawaii) KawaiiTiles.bowPicture = KawaiiView.loadScaled(ctx, "bow.png",
+                Math.round(18 * ctx.getResources().getDisplayMetrics().density));
+        this.arcade = "arcade".equals(cfg.scene);
+        this.touchControls = cfg.touchControls;
+        this.tileAlpha = Math.round(Math.max(30, Math.min(100, cfg.dockOpacity)) * 2.55f);
+        squareTiles = arcade;
         this.appLabels = cfg.appLabels;
         this.appBanners = cfg.appBanners;
         // Tiles keep their identity across reload(), so a focused tile stays on its app instead of
@@ -423,9 +451,10 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         }
         h.card.setVisibility(View.VISIBLE);
         h.card.setFocusable(true);
+        h.card.setFocusableInTouchMode(touchControls);
         h.name.setText(e.name);
         // The dock has no labels, unless always_show_names asks for them (DockDecoration then makes room in the band).
-        h.name.setVisibility(dockRow && position < dockSize && restNameAlpha == 0f ? View.INVISIBLE : View.VISIBLE);
+        h.name.setVisibility(dockRow && position < dockSize && restNameAlpha == 0f && !arcade && !kawaii ? View.INVISIBLE : View.VISIBLE);
         boolean focused = h.card.isFocused();   // a rebind after reload() can hit the focused tile
         h.name.setAlpha(focused ? 1f : restNameAlpha);
         h.card.setScaleX(focused && animations ? focusScale() : 1f);
@@ -450,7 +479,21 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             h.label.setText(e.label);
             h.label.setVisibility(View.VISIBLE);
         }
-        h.card.setOnClickListener(v -> launch(e));
+        if (arcade) bindArcade(h, e, position);
+        else if (kawaii) bindKawaii(h, e, position);
+        else if (tileAlpha < 255) {
+            // See-through tiles: the card's fill and the app's own artwork fade together.
+            if (h.card.getBackground() != null) h.card.getBackground().mutate().setAlpha(tileAlpha);
+            h.banner.setImageAlpha(tileAlpha);
+            h.icon.setImageAlpha(tileAlpha);
+        }
+        h.card.setOnClickListener(v -> {
+            if (deploy && e.kind != Entry.HOME_SETTINGS && ctx instanceof Activity) {
+                DeployFlash.play((Activity) ctx, v, deployAccent, () -> launch(e));
+            } else {
+                launch(e);
+            }
+        });
         h.card.setOnLongClickListener(v -> {
             if (tileMenu) {
                 int pos = h.getBindingAdapterPosition();
@@ -465,6 +508,60 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             }
             return true;
         });
+    }
+
+    /** Dresses a bound tile as an arcade cabinet card: neon frame, pixelated art, pixel-font names. */
+    private void bindArcade(Holder h, Entry e, int position) {
+        Resources res = ctx.getResources();
+        float density = res.getDisplayMetrics().density;
+        int color = 0xFFFF2E9A;   // every frame in the scene's fuchsia, like the grid
+        h.card.setBackground(new ArcadeTiles.Frame(color, density));
+        int cardW = h.card.getLayoutParams().width > 0 ? h.card.getLayoutParams().width : (int) (180 * density);
+        int cardH = h.card.getLayoutParams().height > 0 ? h.card.getLayoutParams().height : (int) (101 * density);
+        int pad = (int) (12 * density);
+        int px = Math.max(1, Math.round(2 * density));
+        // The whole face is the app's name in the pixel font, as large as it fits, over a deep pink shadow.
+        Drawable face = pixelArt.get(e.pkg + "@" + cardW);
+        if (face == null) {
+            face = PixelFont.block(res, e.label, cardW - 2 * pad, cardH - 2 * pad, Math.round(4 * density),
+                    Math.max(1, Math.round(1.5f * density)), 0xFFFFFFFF, 0xDD9A0E5E);
+            pixelArt.put(e.pkg + "@" + cardW, face);
+        }
+        h.banner.setImageDrawable(face);
+        h.banner.setScaleType(ImageView.ScaleType.CENTER);
+        h.banner.setPadding(0, 0, 0, 0);
+        h.banner.setVisibility(View.VISIBLE);
+        h.icon.setVisibility(View.GONE);
+        h.label.setVisibility(View.GONE);
+        // Under the focused tile: "NAME - OPEN" in the pixel font, white over a black shadow so it reads on the grid.
+        h.name.setText("");
+        h.name.setBackground(PixelFont.drawable(res, e.name + " - " + ctx.getString(R.string.arcade_open),
+                cardW + (int) (40 * density), px, 0xFFFFFFFF, 0xFF000000));
+    }
+
+    /** Dresses a bound tile as a kawaii card: pastel frame and bow, the name large in the app's colour. */
+    private void bindKawaii(Holder h, Entry e, int position) {
+        Resources res = ctx.getResources();
+        float density = res.getDisplayMetrics().density;
+        int color = ambientColorAt(position);
+        h.card.setBackground(new KawaiiTiles.Frame(color, position, density, tileAlpha));
+        int cardW = h.card.getLayoutParams().width > 0 ? h.card.getLayoutParams().width : (int) (180 * density);
+        int cardH = h.card.getLayoutParams().height > 0 ? h.card.getLayoutParams().height : (int) (101 * density);
+        Drawable face = pixelArt.get(e.pkg + "@" + cardW);
+        if (face == null) {
+            face = KawaiiTiles.label(res, kawaiiFont, e.label, cardW - (int) (24 * density), cardH - (int) (22 * density),
+                    26 * density, 11 * density, KawaiiTiles.ink(color), 2.5f * density);
+            pixelArt.put(e.pkg + "@" + cardW, face);
+        }
+        h.banner.setImageDrawable(face);
+        h.banner.setScaleType(ImageView.ScaleType.CENTER);
+        h.banner.setPadding(0, 0, 0, 0);
+        h.banner.setVisibility(View.VISIBLE);
+        h.icon.setVisibility(View.GONE);
+        h.label.setVisibility(View.GONE);
+        h.name.setText("");
+        h.name.setBackground(KawaiiTiles.label(res, kawaiiFont, e.name + " - " + ctx.getString(R.string.arcade_open),
+                cardW + (int) (40 * density), (int) (22 * density), 15 * density, 9 * density, 0xFFC2185B, 2f * density));
     }
 
     /** Opens the tile's activity by explicit component, with no extras: a card can name nothing else. */
@@ -490,7 +587,9 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         try {
             ctx.startActivity(i);
             if (cinematic) LastOpened.record(ctx, e.pkg);
-            if (advancedEffects && !reducedMotion && ctx instanceof Activity) {
+            if (deploy && ctx instanceof Activity) {
+                ((Activity) ctx).overridePendingTransition(R.anim.deploy_enter, R.anim.deploy_exit);
+            } else if (advancedEffects && !reducedMotion && ctx instanceof Activity) {
                 ((Activity) ctx).overridePendingTransition(R.anim.app_open_enter, R.anim.app_open_exit);
             }
         } catch (Exception ex) {
@@ -670,7 +769,7 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     /** Corner radius for a tile of this width: 16dp at the design width, proportionally less when smaller. */
     static float cornerRadius(int tileWidthPx, float density) {
-        return 16f * density * Math.min(1f, tileWidthPx / (DESIGN_W_DP * density));
+        return (squareTiles ? 3f : 16f) * density * Math.min(1f, tileWidthPx / (DESIGN_W_DP * density));
     }
 
     static final class Holder extends RecyclerView.ViewHolder {

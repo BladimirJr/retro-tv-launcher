@@ -26,6 +26,8 @@ public class GlassView extends View {
     private int glowRgb = 0xFFFFFF;
     /** Glow strength: the white glow stays faint, a coloured one needs more alpha to read as warm light. */
     private int glowAlpha = 0x30;
+    /** Neon mode (the arcade scene) as 0xRRGGBB, or -1: no glass fill or sheen, just a bright rim and glow. */
+    private int neonRgb = -1;
 
     public GlassView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -41,9 +43,20 @@ public class GlassView extends View {
         setLayerType(LAYER_TYPE_HARDWARE, null);
     }
 
-    /** Tints the rim and the outer glow; 0 restores the plain white glass. */
+    /** Turns the slab into a neon outline in {@code rgb}: a strong rim and glow over the tile, nothing inside. */
+    void setNeon(int rgb) {
+        neonRgb = rgb & 0xFFFFFF;
+        rim.setStrokeWidth(3f * density);
+        setAccent(0);
+    }
+
+    /** Tints the rim and the outer glow; 0 restores the plain white glass (or the neon colour in neon mode). */
     void setAccent(int argb) {
-        if (argb == 0) {
+        if (argb == 0 && neonRgb >= 0) {
+            glowRgb = neonRgb;
+            glowAlpha = 0xA0;
+            rim.setColor(0xFF000000 | neonRgb);
+        } else if (argb == 0) {
             glowRgb = 0xFFFFFF;
             glowAlpha = 0x30;
             rim.setColor(0xCCFFFFFF);
@@ -88,6 +101,10 @@ public class GlassView extends View {
             canvas.drawRoundRect(rect.left - o, rect.top - o, rect.right + o, rect.bottom + o, radius + o, radius + o, glow);
         }
 
+        if (neonRgb >= 0) {
+            canvas.drawRoundRect(rect, radius, radius, rim);
+            return;
+        }
         canvas.drawRoundRect(rect, radius, radius, fill);
 
         // Sheen across the top 45%: clipRect stays on the GPU (clipPath did not on the MT5895) and

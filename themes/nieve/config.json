@@ -1,0 +1,18 @@
+{
+  "scene": "snow",
+  "screensaver": "galaxy",
+  "launch_transition": "deploy",
+  "home_idle_clock_minutes": 5,
+  "background_color": "#02040B",
+  "wallpaper": false,
+  "ambient_glow": false,
+  "app_glow": true,
+  "dock_glass": true,
+  "dock_opacity": 100,
+  "icon_only_buttons": true,
+  "home_settings_button": true,
+  "focus_overshoot": false,
+  "animations": true,
+  "advanced_effects": true,
+  "fade_rows": true
+}
